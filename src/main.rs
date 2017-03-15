@@ -52,19 +52,29 @@ fn main() {
     let _ = css_provider.load_from_data("* { background-color: rgba(27, 29, 31, 0.8); }");
     style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
+    // Button
+    let button = Button::new_with_label("Unlock!");
+    button.set_size_request(80,32);
+
     // Background
-    let image_buffer = gdk_pixbuf::Pixbuf::new_from_file_at_scale("lockscreen.png", -1, monitor.height, true).unwrap();
+    let image_buffer = gdk_pixbuf::Pixbuf::new_from_file_at_scale("lockscreen2.png", monitor.width, monitor.height, false).unwrap();
     let image = gtk::Image::new_from_pixbuf(Some(&image_buffer));
 
     // Add background to window
     let container = gtk::Fixed::new();
     container.put(&image, 0,0);
+    container.put(&button, monitor.width / 2, monitor.height / 2);
     window.add(&container);
     window.show_all();
+
 
     window.connect_delete_event(|_, _| {
         gtk::main_quit();
         Inhibit(false)
+    });
+    button.connect_clicked(|_| {
+        println!("Clicked!");
+        gtk::main_quit();
     });
 
     gtk::main();
