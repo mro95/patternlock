@@ -20,7 +20,7 @@ use std::process::Command;
 use std::ptr;
 use std::rc::Rc;
 
-use gtk::{Button, Window, WindowType};
+use gtk::{Button, Entry, Window, WindowType};
 
 fn main() {
     // TODO: Use env SCREEN or whatever
@@ -56,6 +56,9 @@ fn main() {
     let button = Button::new_with_label("Unlock!");
     button.set_size_request(80,32);
 
+    // Input
+    let input = gtk::Entry::new();
+
     // Background
     let image_buffer = gdk_pixbuf::Pixbuf::new_from_file_at_scale("lockscreen2.png", monitor.width, monitor.height, false).unwrap();
     let image = gtk::Image::new_from_pixbuf(Some(&image_buffer));
@@ -64,18 +67,43 @@ fn main() {
     let container = gtk::Fixed::new();
     container.put(&image, 0,0);
     container.put(&button, monitor.width / 2, monitor.height / 2);
+    container.put(&input, 0,0);
     window.add(&container);
     window.show_all();
+    
 
+	input.set_can_focus(true);
+    input.grab_focus();
+
+    // Grab input
+    let gdk_window = window.get_window().unwrap();
+    let display = screen.get_display();
+    let device_manager = display.get_device_manager().unwrap();
+    let pointer = device_manager.get_client_pointer();
+    let keyboard = pointer.get_associated_device().unwrap();
+    let cursor = gdk::Cursor::new_for_display(&display, gdk_sys::GdkCursorType::LeftPtr);
+
+    window.connect_visibility_notify_event(move |_, _| {
+        let _ = pointer.grab(&gdk_window, gdk::GrabOwnership::Application, true, gdk::EventMask::empty(),
+                             &cursor, gdk_sys::GDK_CURRENT_TIME as u32);
+
+        let _ = keyboard.grab(&gdk_window, gdk::GrabOwnership::Application, true, gdk::EventMask::empty(),
+                              &cursor, gdk_sys::GDK_CURRENT_TIME as u32);
+
+        Inhibit(false)
+    });
+    
 
     window.connect_delete_event(|_, _| {
         gtk::main_quit();
         Inhibit(false)
     });
+
     button.connect_clicked(|_| {
         println!("Clicked!");
         gtk::main_quit();
     });
+	
 
     gtk::main();
 }
